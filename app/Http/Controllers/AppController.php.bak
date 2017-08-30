@@ -1,0 +1,143 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+use App\Http\Requests\AppRequest;
+use App\Application_layer;
+use App\Business_layer;
+use App\Data_layer;
+use App\Technology_layer;
+use App\Department;
+use Illuminate\Support\Facades\DB;
+
+class AppController extends Controller
+{
+  public function __construct()
+  {
+      $this->middleware('auth');
+     // $this->middleware('roles');
+  }
+    public function index(){
+      //$app = application_layer::all();
+      $apps = DB::table('application_layer')->get();
+      return view('app.index', compact('apps'));
+    }
+    public function create(){
+        //$department =  DB::table('Department')->get();
+        $items  = Department::pluck('name', 'id');
+        return view('app.create', compact('id', 'items'));
+    }
+    public function store(AppRequest $request)
+     {
+
+       $app = new application_layer(array(
+        'name' => $request->get('name'),
+        'develop_language' => $request->get('develop_language'),
+        'app_database' => $request->get('app_database'),
+        'develop_company' => $request->get('develop_company'),
+        'getting_start_years' => $request->get('getting_start_years'),
+        'app_relation' => $request->get('app_relation'),
+        'remark' => $request->get('remark'),
+        'ma_cost' => $request->get('ma_cost'),
+        'department_id' => $request->get('department_id')
+       ));
+         $app->save();
+
+       //application_layer::create($request->all());
+       return redirect()->route('app.index');
+
+     }
+
+     public function show($id)
+     {
+
+     }
+    public function relation($app)
+    {
+        $apps = application_layer::all();
+        $buss = Business_layer::all();
+        $dats = Data_layer::all();
+        $techs = Technology_layer::all();
+        return view('app.addrelation',compact('app'),compact('apps','buss','dats','techs'));
+    }
+    public function addrelation()
+    {   $id = $_POST['id'];
+        $ar = json_decode($_POST['ar'], true);
+        foreach($ar as  $app){
+          DB::table('application_relation')->insert(
+          ['application_layer_id' =>$id,'comp_id' => $app ,'frag' => 'a']
+          );
+        }
+        $br = json_decode($_POST['br'], true);
+        foreach($br as  $bus){
+          DB::table('application_relation')->insert(
+          ['application_layer_id' =>$id,'comp_id' => $bus ,'frag' => 'b']
+          );
+        }
+        $dr = json_decode($_POST['dr'], true);
+        foreach($dr as  $dat){
+          DB::table('application_relation')->insert(
+          ['application_layer_id' =>$id,'comp_id' => $dat ,'frag' => 'd']
+          );
+        }
+        $tr = json_decode($_POST['tr'], true);
+        foreach($tr as  $tech){
+          DB::table('application_relation')->insert(
+          ['application_layer_id' =>$id,'comp_id' => $tech ,'frag' => 't']
+          );
+        }
+
+      //$a = $str[1];
+        return redirect()->route('app.index');
+    }
+    public function moveup($app)
+    {
+        $idapp =$app;
+        $idapp--;
+        DB::table('application_layer')
+            ->where('id',$app)
+            ->update(['id' => 9999]);
+        DB::table('application_layer')
+            ->where('id',$idapp)
+            ->update(['id' => $app]);
+        DB::table('application_layer')
+            ->where('id', 9999)
+            ->update(['id' => $idapp]);
+        return redirect()->route('app.index');
+    }
+    public function movedown($app)
+    {
+        $idapp =$app;
+        $idapp++;
+        DB::table('application_layer')
+            ->where('id',$app)
+            ->update(['id' => 9999]);
+        DB::table('application_layer')
+            ->where('id',$idapp)
+            ->update(['id' => $app]);
+        DB::table('application_layer')
+            ->where('id',9999)
+            ->update(['id' => $idapp]);
+        return redirect()->route('app.index');
+    }
+
+     public function edit(application_layer $app)
+    {   $items  = Department::pluck('name', 'id');
+
+        return view('app.edit',compact('app','id', 'items'));
+    }
+
+    public function update(AppRequest $request, application_layer $app)
+   {
+       $app->update($request->all());
+       return redirect()->route('app.index');
+   }
+
+     public function destroy(application_layer $app)
+     {
+        $app->delete();
+        return redirect()->route('app.index');
+     }
+}

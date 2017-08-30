@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+use App\Http\Requests\BusRequest;
+use App\Application_layer;
+use App\Business_layer;
+use App\Data_layer;
+use App\Technology_layer;
+use Illuminate\Support\Facades\DB;
+
+class BusController extends Controller
+{
+    public function index(){
+      //$bus = Business_layer::all();
+      $buss = DB::table('Business_layer')->get();
+      return view('bus.index', compact('buss'));
+    }
+    public function create(){
+	 $items  = Department::pluck('name', 'id');
+    //return view('app.create', compact('id', 'items'));
+    return view('bus.create', compact('id', 'items'));
+    }
+    public function store(BusRequest $request)
+     {
+        
+       $bus = new Business_layer(array(
+         'name' => $request->get('name'),
+         'remark' => $request->get('remark'),
+         'department_id'  => $request->get('department_id')
+       ));
+         $bus->save();
+
+        $fileName = $bus->id . '.' .
+        $request->file('file')->getClientOriginalExtension();
+
+        $request->file('file')->move(
+        base_path() . '/public/images/bus/', $fileName
+
+      );
+      $busfile =  DB::table('Business_layer')
+            ->where('id',$bus->id)
+            ->update(['workflow_path' => $fileName]);
+       //Business_layer::create($request->all());
+       return redirect()->route('bus.index')->with('message','item has been added successfully');
+
+     }
+
+     public function show($id)
+     {
+
+     }
+     public function relation($app)
+    {
+        $apps = application_layer::all();
+        $buss = Business_layer::all();
+        $dats = Data_layer::all();
+        $techs = Technology_layer::all();
+        return view('app.addrelation',compact('app'),compact('apps','buss','dats','techs'));
+    }
+    public function addrelation()
+    {   $id = $_POST['id'];
+        $ar = json_decode($_POST['ar'], true);
+        foreach($ar as  $app){
+          DB::table('business_relation')->insert(
+          ['business_layer_id' =>$id,'comp_id' => $app ,'frag' => 'a
+          ']
+          );
+        }
+        $br = json_decode($_POST['br'], true);
+        foreach($br as  $bus){
+          DB::table('business_relation')->insert(
+          ['business_layer_id' =>$id,'comp_id' => $bus ,'frag' => 'b']
+          );
+        }
+        $dr = json_decode($_POST['dr'], true);
+        foreach($dr as  $dat){
+          DB::table('business_relation')->insert(
+          ['business_layer_id' =>$id,'comp_id' => $dat ,'frag' => 'd']
+          );
+        }
+        $tr = json_decode($_POST['tr'], true);
+        foreach($tr as  $tech){
+          DB::table('business_relation')->insert(
+          ['business_layer_id' =>$id,'comp_id' => $tech ,'frag' => 't']
+          );
+        }
+
+      //$a = $str[1];
+        return redirect()->route('app.index')->with('message','relation has been create successfully');
+    }
+     public function moveup($bus)
+    {
+        $idapp =$bus;
+        $idapp--;
+        DB::table('Business_layer')
+            ->where('id',$bus)
+            ->update(['id' => 9999]);
+        DB::table('Business_layer')
+            ->where('id',$idapp)
+            ->update(['id' => $bus]);
+        DB::table('Business_layer')
+            ->where('id', 9999)
+            ->update(['id' => $idapp]);
+        return redirect()->route('bus.index')->with('message','item has been move successfully');
+    }
+    public function movedown($bus)
+    {
+        $idapp =$bus;
+        $idapp++;
+        DB::table('Business_layer')
+            ->where('id',$bus)
+            ->update(['id' => 9999]);
+        DB::table('Business_layer')
+            ->where('id',$idapp)
+            ->update(['id' => $bus]);
+        DB::table('Business_layer')
+            ->where('id',9999)
+            ->update(['id' => $idapp]);
+        return redirect()->route('bus.index')->with('message','item has been move successfully');
+    }
+     public function edit(Business_layer $bus)
+    {	$items  = Department::pluck('name', 'id');
+        return view('bus.edit',compact('bus','name', 'id'));
+    }
+
+    public function update(BusRequest $request, Business_layer $bus)
+   {
+       $bus->update($request->all());
+       return redirect()->route('bus.index')->with('message','item has been updated successfully');
+   }
+
+     public function destroy(Business_layer $bus)
+     {
+        $bus->delete();
+        return redirect()->route('bus.index')->with('message','item has been deleted successfully');
+     }
+}
