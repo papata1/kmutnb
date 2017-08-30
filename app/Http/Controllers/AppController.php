@@ -23,7 +23,7 @@ class AppController extends Controller
      // $this->middleware('roles');
   }
     public function index(){
-      //$app = application_layer::all();
+      //$app = application_layer::all();lkoikpkop
         $in = DB::table('Initial')
             ->where('id',1)
             ->select('initial')

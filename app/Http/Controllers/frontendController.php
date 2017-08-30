@@ -27,7 +27,7 @@ use App\use_data;
 use Illuminate\Support\Facades\DB;
 use Excel;
 
-
+     
 class frontendController extends Controller{
   public function viewBus(){
    $model = DB::select("
